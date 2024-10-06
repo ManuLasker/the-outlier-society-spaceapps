@@ -6,8 +6,10 @@ import streamlit as st
 import obspy as obspy
 import matplotlib.pyplot as plt
 from obspy.signal.invsim import cosine_taper
+from scipy.signal import find_peaks
 from obspy.signal.filter import highpass
 from obspy.signal.trigger import classic_sta_lta, plot_trigger, trigger_onset
+from scipy.signal import hilbert
 from typing import List
 from scipy import signal
 from matplotlib import cm
@@ -150,7 +152,6 @@ def apply_lst_sta_algo_and_plot_char_func(st_values, sta_len=120, lta_len=600):
 
     return cft, fig, ax
 
-
 def calculate_on_off_cft_and_plot(st_values, cft, thr_on=4, thr_off=1.5):
     # Play around with the on and off triggers, based on values in the characteristic function
     tr = st_values.traces[0].copy()
@@ -214,3 +215,68 @@ def calculate_root_mean_square_error(expected, actual):
         return np.sqrt((expected - actual)**2)
     else:
         return np.sqrt((expected - actual) ** 2/len(expected))
+
+def apply_hilbert_and_plot_char(st_values, file_name_to_analyze, arrival_time=None, plot_real=False):
+    # Sampling frequency of our trace
+    tr = st_values.traces[0].copy()
+    df = tr.stats.sampling_rate
+    tr_times = tr.times()
+    tr_data = tr.data
+    # Calcular el envolvente de la señal usando la transformada de Hilbert
+    analytical_signal = hilbert(tr_data)
+    amplitude_envelope = np.abs(analytical_signal)
+
+    fig,ax = plt.subplots(1,1,figsize=(10,3))
+    if plot_real and arrival_time is not None:
+        starttime = tr.stats.starttime.datetime
+        arrival = (arrival_time - starttime).total_seconds()
+        # Plot where the arrival time is
+        # Mark detection
+        ax.axvline(x = arrival, color='red',label='Rel. Arrival')
+        ax.legend(loc='upper left')
+
+   # Graficar la envolvente de la señal (energía)
+    ax.plot(tr_times, amplitude_envelope, color='green', label='Envolvente de Amplitud (Energía)')
+    ax.set_xlabel('Tiempo (s)')
+    ax.set_ylabel('Energía')
+    ax.set_title(f'Energía en la Señal {file_name_to_analyze}')
+
+    return amplitude_envelope, fig, ax
+
+def apply_find_peaks_of_energy_amplitude_function(st_values, amplitude_envelope, min_distance=40000, percentile_value=99.5,
+                                                  arrival_time=None, plot_real=False, file_name_to_analyze=""):
+    # Sampling frequency of our trace
+    tr = st_values.traces[0].copy()
+    df = tr.stats.sampling_rate
+    tr_times = tr.times()
+    tr_data = tr.data
+    
+    # Calcular el envolvente de la señal usando la transformada de Hilbert
+    threshold = np.percentile(amplitude_envelope, percentile_value)  # Cambia el percentil si es necesario
+    peaks, properties = find_peaks(amplitude_envelope, height=threshold, distance=min_distance)
+
+    fig,ax = plt.subplots(1,1,figsize=(10,3))
+    if plot_real and arrival_time is not None:
+        starttime = tr.stats.starttime.datetime
+        arrival = (arrival_time - starttime).total_seconds()
+        # Plot where the arrival time is
+        # Mark detection
+        ax.axvline(x = arrival, color='red',label='Rel. Arrival')
+        ax.legend(loc='upper left')
+
+    # Graficar resultados
+    ax.plot(tr_times, amplitude_envelope, color='green', label='Energía')
+    ax.scatter(tr_times[peaks], amplitude_envelope[peaks], color='red', label='Picos detectados')
+    ax.axhline(y=threshold, color='orange', linestyle='--', label='Umbral de Energía')
+    ax.set_title(f'Detected peaks {file_name_to_analyze.split("/")[-1]}')
+    ax.set_xlabel('Tiempo (s)')
+    ax.set_ylabel('Energía')
+    ax.legend()
+
+    # Agregar el número de sismos en la gráfica
+    num_peaks = len(peaks)
+    ax.text(x=0.0, y=-0.07, s=f'Number of peaks: {num_peaks}', 
+             transform=fig.gca().transAxes, fontsize=12, color='blue', 
+             verticalalignment='top')
+    
+    return peaks, fig, ax
