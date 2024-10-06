@@ -206,9 +206,11 @@ def calculate_predicted_arrival_time(st_values, triggers):
     df = tr.stats.sampling_rate
     tr_times = tr.times()
     tr_data = tr.data
-
     triggers_ = triggers[0]
-    return tr_times[triggers_[0]]
+    try:
+        return tr_times[triggers_[0]]
+    except:
+        return tr_times[triggers_]
 
 def calculate_root_mean_square_error(expected, actual):
     if (isinstance(expected, float) and isinstance(actual, float)):
