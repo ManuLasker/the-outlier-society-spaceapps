@@ -441,10 +441,10 @@ def testing_data_visualization_energy_peak_review():
                             st.write(f"Detected: {predicted_arrival_time}")
 
 page_names_to_funcs = {
-    "trainig sta/dta interactive visualization": training_data_visualization_review,
+    "train sta/dta interactive visualization": training_data_visualization_review,
     "test sta/dta interactive visualization": testing_data_visualization_review,
-    "training energy peak interactive visualization": training_data_visualization_energy_peak_review,
-    "testing energy peak interactive visualization": testing_data_visualization_energy_peak_review
+    "train energy peak interactive visualization": training_data_visualization_energy_peak_review,
+    "test energy peak interactive visualization": testing_data_visualization_energy_peak_review
 }
 
 demo_name = st.sidebar.selectbox("Choose what you want to see", page_names_to_funcs.keys())
