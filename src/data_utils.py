@@ -2,7 +2,6 @@ import pandas as pd
 import numpy as np
 import os
 import glob
-import streamlit as st
 import obspy as obspy
 import matplotlib.pyplot as plt
 from obspy.signal.invsim import cosine_taper
@@ -16,20 +15,19 @@ from matplotlib import cm
 
 BASE_PATH: str = "data"
 
-@st.cache_data
 def load_data(file_path: str):
     try:
         df = pd.read_csv(file_path)
         return df
     except:
-        st.error("data does not exists")
+        print("error")
 
 def load_special_file(file_path: str):
     try:
         st_values = obspy.read(file_path)
         return st_values
     except:
-        st.error(f"data does not exists: {file_path}")
+        print("error")
 
 def plot_values_from_special_content(st_values, test_filename, arrival_time=None, title="",  plot_real=False, plot_spectogram=False):
     # This is how you get the data and the time, which is in seconds
@@ -78,13 +76,11 @@ def plot_values_from_special_content(st_values, test_filename, arrival_time=None
     return fig, ax
 
 
-@st.cache_data
 def search_in_list(data: str, list_: List[str]):
     for i, value in enumerate(list_):
         if data in value:
             return i
 
-@st.cache_data
 def get_match_filename_training(filenames: List[str], asteroid_path: str, extension: str | None = None):
     path = os.path.join(BASE_PATH, asteroid_path)
     if extension is None:
@@ -98,7 +94,6 @@ def get_match_filename_training(filenames: List[str], asteroid_path: str, extens
             results_mapping[filename] = result_filter[index]
     return results_mapping
 
-@st.cache_data
 def get_list_of_data_training(asteroid_path: str, extension: str | None = None):
     path = os.path.join(BASE_PATH, asteroid_path)
     if extension is None:
@@ -108,7 +103,6 @@ def get_list_of_data_training(asteroid_path: str, extension: str | None = None):
     data_df = pd.DataFrame(result_filter, columns=["path"])
     return data_df
 
-@st.cache_data
 def get_list_of_data_testing(asteroid_path: str, extension: str | None = None):
     path = os.path.join(BASE_PATH, asteroid_path)
     if extension is None:
